@@ -8,7 +8,11 @@ const formidable  = require('formidable');
 const server = http.createServer((req, res) => {
   if (req.url === '/upload' && req.method.toLowerCase() === 'post') {
     // parse a file upload
-    const form = formidable({keepExtensions: false, maxFileSize: 50 * 1024 * 1024, multiples: true});
+    const form = formidable({
+      keepExtensions: false,
+      maxFileSize: 50 * 1024 * 1024,
+      multiples: true
+    });
 
     form.parse(req, (err, fields, files) => {
       res.writeHead(200, { 'content-type': 'text/plain' });
@@ -18,7 +22,9 @@ const server = http.createServer((req, res) => {
       // Przesuń plik do folderu
       const uploadDir = './upload_dir/';
       try {
-        files.upload[0];
+        if (!Array.isArray(files.upload)) {
+          files.upload = [files.upload];
+        }
         files.upload.forEach(file => {
           const oldPath = file.path;
           const newPath = `${uploadDir}/${file.name}`;
@@ -26,7 +32,13 @@ const server = http.createServer((req, res) => {
         });
       } catch (err) {
         // tylko jeden plik?
-        fs.renameSync(files.upload.path, `${uploadDir}/${files.upload.name}`);
+        console.error(err);
+        try {
+          fs.renameSync(files.upload.path, `${uploadDir}/${files.upload.name}`);
+        } catch (err2) {
+ 
+          console.log(`error2: ${err2}`);
+        }
       }
       res.write(util.inspect({upload: files.upload}));
 
@@ -157,6 +169,6 @@ function returnFileSize (number) {
    `);
 })
 
-server.listen(8080, () => {
+server.listen(8081, () => {
   console.log(`Server listening on ${util.inspect(server.address())}`);
 });
