@@ -1,9 +1,10 @@
-'use strict'
+/* jshint strict: global, esversion: 6, node: true */
+'use strict';
 
-const http        = require('http');
-const util        = require('util');
-const fs          = require('fs');
-const formidable  = require('formidable');
+const http = require('http');
+const util = require('util');
+const fs = require('fs');
+const formidable = require('formidable');
 
 const server = http.createServer((req, res) => {
   if (req.url === '/upload' && req.method.toLowerCase() === 'post') {
@@ -11,10 +12,15 @@ const server = http.createServer((req, res) => {
     const form = formidable({
       keepExtensions: false,
       maxFileSize: 50 * 1024 * 1024,
-      multiples: true
+      multiples: true,
     });
 
     form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.log('--------------------- ERROR --------------------------');
+        console.err(err);
+        return;
+      }
       res.writeHead(200, { 'content-type': 'text/plain' });
       res.write('received upload:\n\n');
       res.write(util.inspect({ fields: fields, files: files }));
@@ -25,7 +31,7 @@ const server = http.createServer((req, res) => {
         if (!Array.isArray(files.upload)) {
           files.upload = [files.upload];
         }
-        files.upload.forEach(file => {
+        files.upload.forEach((file) => {
           const oldPath = file.path;
           const newPath = `${uploadDir}/${file.name}`;
           fs.renameSync(oldPath, newPath);
@@ -36,11 +42,10 @@ const server = http.createServer((req, res) => {
         try {
           fs.renameSync(files.upload.path, `${uploadDir}/${files.upload.name}`);
         } catch (err2) {
- 
           console.log(`error2: ${err2}`);
         }
       }
-      res.write(util.inspect({upload: files.upload}));
+      res.write(util.inspect({ upload: files.upload }));
 
       // Kończ
       res.end();
@@ -53,8 +58,14 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': 'text/html' });
 
   res.end(fs.readFileSync('./index.html'));
-})
-
-server.listen(8081, () => {
-  console.log(`Server listening on ${util.inspect(server.address())}`);
 });
+
+server.listen(
+  {
+    host: '192.168.43.74',
+    port: 8000,
+  },
+  () => {
+    console.log(`Server listening on ${util.inspect(server.address())}`);
+  }
+);
